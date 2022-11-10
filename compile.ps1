@@ -1,0 +1,1 @@
+g++ pongdemonium.cpp -o pongdemonium.exe -Iinclude/ -Iresources -Llib/ -lraylib -lopengl32 -lgdi32 -lwinmm

@@ -47,10 +47,9 @@ struct Player {
 };
 
 //----------------------------------------------------------------------------------------------------
-// Program main entry point
+// Main entry point of program
 //----------------------------------------------------------------------------------------------------
-
-int main() 
+int main()
 {
 	// Initialisation
 	//------------------------------------------------------------------------------------------------
@@ -95,12 +94,82 @@ int main()
 	// Main game loop
 	while (!WindowShouldClose())		// Detect window close button or ESC key
 	{
+		// Update game state (one frame at a time)
+		
+		// Logic for position of game objects (sprites)
+		//------------------------------------------------------------------------------------------------
+		// Move ball 1 around the screen - change position by adding velocity in x and y directions
+		ball1.position.x += ball1.speed.x * GetFrameTime();		// Get time in seconds for last frame drawn (delta time)
+		ball1.position.y += ball1.speed.y * GetFrameTime();		// to keep update of position in sync with frame speed
+
+		// Set bottom bound for ball 1
+		if (ball1.position.y > GetScreenHeight() - ball1.radius)
+		{
+			ball1.position.y = GetScreenHeight() - ball1.radius;
+			// Change the direction of the ball
+			ball1.speed.y *= -1;
+		}
+		// Set top bound for ball 1
+		else if (ball1.position.y < 0 + ball1.radius)
+		{
+			ball1.position.y = 0 + ball1.radius;
+			// Change the direction of the ball
+			ball1.speed.y *= -1;
+		}
+
+		// insert bounds for ball2 here
+
+		// Set bottom bound for player 1
+		if (player1Left.position.y > GetScreenHeight() - (player1Left.size.y / 2))
+		{
+			player1Left.position.y = GetScreenHeight() - (player1Left.size.y / 2);
+		}
+		// Set top bound for player 1
+		else if (player1Left.position.y < 0 + (player1Left.size.y / 2))
+		{
+			player1Left.position.y = 0 + (player1Left.size.y / 2);
+		}
+
+		// Set bottom bound for player 2
+		if (player2Right.position.y > GetScreenHeight() - (player2Right.size.y / 2))
+		{
+			player2Right.position.y = GetScreenHeight() - (player2Right.size.y / 2);
+		}
+		// Set top bound for player 2
+		else if (player2Right.position.y < 0 + (player2Right.size.y / 2))
+		{
+			player2Right.position.y = 0 + (player2Right.size.y / 2);
+		}
+
+		// Logic for user input controls
+		//------------------------------------------------------------------------------------------------
+		// Set controls for player 1
+		if (IsKeyDown(KEY_S))
+		{
+			player1Left.position.y += player1Left.speed * GetFrameTime();
+		}
+		if (IsKeyDown(KEY_W))
+		{
+			player1Left.position.y -= player1Left.speed * GetFrameTime();
+		}
+
+		// Set controls for player 2
+		if (IsKeyDown(KEY_DOWN))
+		{
+			player2Right.position.y += player2Right.speed * GetFrameTime();
+		}
+		if (IsKeyDown(KEY_UP))
+		{
+			player2Right.position.y -= player2Right.speed * GetFrameTime();
+		}
+		
+		// Draw game (one frame at a time)
 		BeginDrawing();
 			ClearBackground(BLACK);
 
-			player1Left.Draw(WHITE);
+			player1Left.Draw(BLUE);
 			player2Right.Draw(RED);
-			ball1.Draw(BLUE);
+			ball1.Draw(WHITE);
 			//if (ball2.active)
 			//{
 			//	ball2.Draw(RED);

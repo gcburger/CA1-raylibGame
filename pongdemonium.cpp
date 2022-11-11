@@ -58,7 +58,7 @@ struct Player {
 // Variables
 //----------------------------------------------------------------------------------------------------
 Player player1Left, player2Right;
-Ball ball1;
+Ball ball1, ball2;
 int player1LeftScore, player2RightScore;
 bool gamePaused = false;
 bool gameWon = false;
@@ -66,7 +66,7 @@ bool gameWon = false;
 //----------------------------------------------------------------------------------------------------
 // Functions
 //----------------------------------------------------------------------------------------------------
-void InitialiseGame()
+void InitialiseGameObjects()
 {
 	// Initialise variables of player 1
 	player1Left.position.x = 25;
@@ -91,14 +91,14 @@ void InitialiseGame()
 	ball1.visible = true;
 
 	// Initialise variables of ball 2
-	/*Ball ball2;
-	ball2.position.x = GetScreenWidth() / 2;
-	ball2.position.y = GetScreenHeight() / 2;
+	ball2.position.x = screenWidth / 2;
+	ball2.position.y = screenHeight/ 2;
 	ball2.radius = 10;
-	ball2.speed.x = 250;
-	ball2.speed.y = 250;
-	ball2.visible = false;*/
+	ball2.velocity.x = 400;
+	ball2.velocity.y = 400;
+	ball2.visible = false;
 
+	// Initialise player scoring counts
 	player1LeftScore = 0;
 	player2RightScore = 0;
 }
@@ -114,7 +114,7 @@ int main()
 
 	SetTargetFPS(60);		// Set our game to run at 60 frames-per-second
 
-	InitialiseGame();
+	InitialiseGameObjects();
 
 	// Main game loop
 	while (!WindowShouldClose())		// Detect window close button or ESC key
@@ -126,9 +126,9 @@ int main()
 			// Logic for position of game objects (sprites)
 			//------------------------------------------------------------------------------------------------
 			// Set bottom bound for player 1
-			if (player1Left.position.y > GetScreenHeight() - (player1Left.size.y / 2))
+			if (player1Left.position.y > screenHeight - (player1Left.size.y / 2))
 			{
-				player1Left.position.y = GetScreenHeight() - (player1Left.size.y / 2);
+				player1Left.position.y = screenHeight - (player1Left.size.y / 2);
 			}
 			// Set top bound for player 1
 			else if (player1Left.position.y < 0 + (player1Left.size.y / 2))
@@ -137,9 +137,9 @@ int main()
 			}
 
 			// Set bottom bound for player 2
-			if (player2Right.position.y > GetScreenHeight() - (player2Right.size.y / 2))
+			if (player2Right.position.y > screenHeight - (player2Right.size.y / 2))
 			{
-				player2Right.position.y = GetScreenHeight() - (player2Right.size.y / 2);
+				player2Right.position.y = screenHeight - (player2Right.size.y / 2);
 			}
 			// Set top bound for player 2
 			else if (player2Right.position.y < 0 + (player2Right.size.y / 2))
@@ -152,9 +152,9 @@ int main()
 			ball1.position.y += ball1.velocity.y * GetFrameTime();		// to keep change of position (velocity) in sync with frame speed
 
 			// Set bottom bound for ball 1
-			if (ball1.position.y > GetScreenHeight() - ball1.radius)
+			if (ball1.position.y > screenHeight - ball1.radius)
 			{
-				ball1.position.y = GetScreenHeight() - ball1.radius;
+				ball1.position.y = screenHeight - ball1.radius;
 				// Change the direction of the ball
 				ball1.velocity.y *= -1;
 			}
@@ -166,7 +166,27 @@ int main()
 				ball1.velocity.y *= -1;
 			}
 
-			// insert bounds for ball2 here
+			if (ball2.visible)
+			{
+				// Move ball 2 around the screen - change position by adding velocity in x and y directions
+				ball2.position.x += ball2.velocity.x * GetFrameTime();		// Get time in seconds for last frame drawn (delta time) i.e. amount of time between frames
+				ball2.position.y += ball2.velocity.y * GetFrameTime();		// to keep change of position (velocity) in sync with frame speed
+
+				// Set bottom bound for ball 1
+				if (ball2.position.y > screenHeight - ball2.radius)
+				{
+					ball2.position.y = screenHeight - ball2.radius;
+					// Change the direction of the ball
+					ball2.velocity.y *= -1;
+				}
+				// Set top bound for ball 1
+				else if (ball2.position.y < 0 + ball2.radius)
+				{
+					ball2.position.y = 0 + ball2.radius;
+					// Change the direction of the ball
+					ball2.velocity.y *= -1;
+				}
+			}
 
 			// Logic for user input controls
 			//------------------------------------------------------------------------------------------------
@@ -237,7 +257,7 @@ int main()
 			//------------------------------------------------------------------------------------------------
 			if (IsKeyPressed(KEY_ENTER))
 			{
-				InitialiseGame();
+				InitialiseGameObjects();
 				gameWon = false;
 			}
 		}
@@ -257,41 +277,51 @@ int main()
 			{
 				ball1.Draw(WHITE);
 			}
-			//if (ball2.visible)
-			//{
-			//	ball2.Draw(GOLD);
-			//}
+			if (ball2.visible)
+			{
+				ball2.Draw(GOLD);
+			}
 
 			DrawText(TextFormat("%i", player1LeftScore), (screenWidth / 2) - 40, 10, 40, BLUE);		// Draw text (using default font)
 			DrawText(TextFormat("%i", player2RightScore), (screenWidth / 2) + 20, 10, 40, RED);		// Draw text (using default font)
 
-			if (player1LeftScore == 2)
+			if (player1LeftScore == 2 || player2RightScore == 2)
+			{
+				// add a delay for ball 2 displaying
+				ball2.visible = true;
+			}
+
+			if (player1LeftScore == 5)
 			{
 				DrawText("LEFT PLAYER WINS!", (screenWidth / 2) - (MeasureText("LEFT PLAYER WINS!", 50) / 2), (screenHeight / 2) - 25, 50, GOLD);
 				gameWon = true;
 				ball1.visible = false;
+				ball2.visible = false;
 			}
 
-			if (player2RightScore == 2)
+			if (player2RightScore == 5)
 			{
 				DrawText("RIGHT PLAYER WINS!", (screenWidth / 2) - (MeasureText("RIGHT PLAYER WINS!", 50) / 2), (screenHeight / 2) - 25, 50, GOLD);
 				gameWon = true;
 				ball1.visible = false;
+				ball2.visible = false;
 			}
 
 			DrawFPS(5, 5);
 
 			// Logic for scoring
 			//------------------------------------------------------------------------------------------------
-			if (ball1.position.x > screenWidth)
+			if (ball1.position.x > screenWidth || ball2.position.x > screenWidth)
 			{
 				player1LeftScore++;
 				ball1.Reset();
+				ball2.Reset();
 			}
-			if (ball1.position.x < 0)
+			if (ball1.position.x < 0 || ball2.position.x < 0)
 			{
 				player2RightScore++;
 				ball1.Reset();
+				ball2.Reset();
 			}
 
 		EndDrawing();

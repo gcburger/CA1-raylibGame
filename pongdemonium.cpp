@@ -22,7 +22,7 @@ struct Ball {
     Vector2 position;
 	Vector2 velocity;
 	float radius;
-    bool active;
+    bool visible;
 
     void Draw(Color colour)
 	{
@@ -57,20 +57,16 @@ struct Player {
 //----------------------------------------------------------------------------------------------------
 // Variables
 //----------------------------------------------------------------------------------------------------
-Player player1Left;
-Player player2Right;
+Player player1Left, player2Right;
 Ball ball1;
-int player1LeftScore = 0;
-int player2RightScore = 0;
+int player1LeftScore, player2RightScore;
 bool gamePaused = false;
 bool gameWon = false;
-
-static void InitGame(void);
 
 //----------------------------------------------------------------------------------------------------
 // Functions
 //----------------------------------------------------------------------------------------------------
-void InitialiseGame(void)
+void InitialiseGame()
 {
 	// Initialise variables of player 1
 	player1Left.position.x = 25;
@@ -92,7 +88,7 @@ void InitialiseGame(void)
 	ball1.radius = 10;
 	ball1.velocity.x = 400;
 	ball1.velocity.y = 400;
-	ball1.active = true;
+	ball1.visible = true;
 
 	// Initialise variables of ball 2
 	/*Ball ball2;
@@ -101,13 +97,16 @@ void InitialiseGame(void)
 	ball2.radius = 10;
 	ball2.speed.x = 250;
 	ball2.speed.y = 250;
-	ball2.active = false;*/
+	ball2.visible = false;*/
+
+	player1LeftScore = 0;
+	player2RightScore = 0;
 }
 
 //----------------------------------------------------------------------------------------------------
 // Main entry point of program
 //----------------------------------------------------------------------------------------------------
-int main(void)
+int main()
 {
 	// Initialisation
 	//------------------------------------------------------------------------------------------------
@@ -253,8 +252,12 @@ int main(void)
 
 			player1Left.Draw(BLUE);
 			player2Right.Draw(RED);
-			ball1.Draw(WHITE);
-			//if (ball2.active)
+
+			if (ball1.visible)
+			{
+				ball1.Draw(WHITE);
+			}
+			//if (ball2.visible)
 			//{
 			//	ball2.Draw(GOLD);
 			//}
@@ -262,37 +265,37 @@ int main(void)
 			DrawText(TextFormat("%i", player1LeftScore), (screenWidth / 2) - 40, 10, 40, BLUE);		// Draw text (using default font)
 			DrawText(TextFormat("%i", player2RightScore), (screenWidth / 2) + 20, 10, 40, RED);		// Draw text (using default font)
 
+			if (player1LeftScore == 2)
+			{
+				DrawText("LEFT PLAYER WINS!", (screenWidth / 2) - (MeasureText("LEFT PLAYER WINS!", 50) / 2), (screenHeight / 2) - 25, 50, GOLD);
+				gameWon = true;
+				ball1.visible = false;
+			}
+
+			if (player2RightScore == 2)
+			{
+				DrawText("RIGHT PLAYER WINS!", (screenWidth / 2) - (MeasureText("RIGHT PLAYER WINS!", 50) / 2), (screenHeight / 2) - 25, 50, GOLD);
+				gameWon = true;
+				ball1.visible = false;
+			}
+
 			DrawFPS(5, 5);
 
-			// Logic for scoring and round reset
+			// Logic for scoring
 			//------------------------------------------------------------------------------------------------
 			if (ball1.position.x > screenWidth)
 			{
 				player1LeftScore++;
 				ball1.Reset();
-				if (player1LeftScore == 3)
-				{
-					DrawText("LEFT PLAYER WINS!", (screenWidth / 2) - (MeasureText("LEFT PLAYER WINS!", 60) / 2), screenHeight / 2, 60, GOLD);
-					gameWon = true;
-					player1LeftScore = 0;
-					player2RightScore = 0;
-				}
 			}
 			if (ball1.position.x < 0)
 			{
 				player2RightScore++;
 				ball1.Reset();
-				if (player2RightScore == 3)
-				{
-					DrawText("RIGHT PLAYER WINS!", (screenWidth / 2) - (MeasureText("RIGHT PLAYER WINS!", 60) / 2), screenHeight / 2, 60, GOLD);
-					gameWon = true;
-					player1LeftScore = 0;
-					player2RightScore = 0;
-				}
 			}
 
 		EndDrawing();
-		}
+	}
 
 	CloseWindow();
 }

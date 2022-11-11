@@ -13,7 +13,7 @@
 // Definition of constants
 //----------------------------------------------------------------------------------------------------
 const int screenWidth = 1000;
-const int screenHeight = 800;
+const int screenHeight = 600;
 
 //----------------------------------------------------------------------------------------------------
 // Definition of custom types
@@ -112,8 +112,16 @@ int main()
     // Initialisation
     //------------------------------------------------------------------------------------------------
     InitWindow(screenWidth, screenHeight, "Pongdemonium");
+    InitAudioDevice();          // Initialize audio device and context
 
-    SetTargetFPS(60);       // Set our game to run at 60 frames-per-second
+    Sound hitBallFX = LoadSound("resources/hitBall.wav");           // Load sound from WAV file for ball and player collision
+    Sound spawnBallFX = LoadSound("resources/spawnBall.wav");       // Load sound from WAV file for end of game win
+    Music music = LoadMusicStream("resources/8-Bit-Retro-Funk-David-Renda.mp3");    // Load sound from mp3 file for game music
+    
+    SetMusicVolume(music, 0.5);     // Set volume for music (1.0 is max level)
+    PlayMusicStream(music);         // Play game music
+
+    SetTargetFPS(60);           // Set the game to run at 60 frames-per-second
 
     InitialiseGameObjects();
 
@@ -123,6 +131,7 @@ int main()
         if (!gameWon)
         {
             // Update game state (one frame at a time)
+            UpdateMusicStream(music);      // Update music buffer with new stream data
             
             // Logic for position of game objects (sprites)
             //------------------------------------------------------------------------------------------------
@@ -228,10 +237,10 @@ int main()
                         ball1.velocity.x *= 1.1;
                         // Negative velocity moves up
                         // Gives an output between -1 and 1 for angle of the ball
-                        ball1.velocity.y = ball1.velocity.x * GetRandomValue(-1, 1);
-                        //((ball1.position.y - player1Left.position.y) / (player1Left.size.y / 2));
+                        ball1.velocity.y = ball1.velocity.x * ((ball1.position.y - player1Left.position.y) / (player1Left.size.y / 2));
                     }
                 }
+                PlaySound(hitBallFX);      // Play WAV sound
             }
 
             // Check for collision between player 1 and ball 2
@@ -249,10 +258,10 @@ int main()
                         ball2.velocity.x *= 1.1;
                         // Negative velocity moves up
                         // Gives an output between -1 and 1 for angle of the ball
-                        ball2.velocity.y = ball2.velocity.x * GetRandomValue(-1, 1);
-                        //((ball1.position.y - player1Left.position.y) / (player1Left.size.y / 2));
+                        ball2.velocity.y = ball2.velocity.x * ((ball2.position.y - player1Left.position.y) / (player1Left.size.y / 2));
                     }
                 }
+                PlaySound(hitBallFX);      // Play WAV sound
             }
 
             // Check for collision between player 2 and ball 1
@@ -268,10 +277,10 @@ int main()
                     {
                         // Increase the horizontal velocity of ball 1 by 10%
                         ball1.velocity.x *= 1.1;
-                        ball1.velocity.y =  (-ball1.velocity.x) * GetRandomValue(-1, 1);
-                        //((ball1.position.y - player2Right.position.y) / (player2Right.size.y / 2));
+                        ball1.velocity.y =  (-ball1.velocity.x) * ((ball1.position.y - player2Right.position.y) / (player2Right.size.y / 2));
                     }
                 }
+                PlaySound(hitBallFX);      // Play WAV sound
             }
 
             // Check for collision between player 2 and ball 2
@@ -287,10 +296,10 @@ int main()
                     {
                         // Increase the horizontal velocity of ball 2 by 10%
                         ball2.velocity.x *= 1.1;
-                        ball2.velocity.y =  (-ball2.velocity.x) * GetRandomValue(-1, 1);
-                        //((ball1.position.y - player2Right.position.y) / (player2Right.size.y / 2));
+                        ball2.velocity.y =  (-ball2.velocity.x) * ((ball2.position.y - player2Right.position.y) / (player2Right.size.y / 2));
                     }
                 }
+                PlaySound(hitBallFX);      // Play WAV sound
             }
         }
         else
@@ -327,7 +336,7 @@ int main()
             DrawText(TextFormat("%i", player1LeftScore), (screenWidth / 2) - 40, 10, 40, BLUE);     // Draw text (using default font)
             DrawText(TextFormat("%i", player2RightScore), (screenWidth / 2) + 20, 10, 40, RED);     // Draw text (using default font)
 
-            if (player1LeftScore >= 2 || player2RightScore >= 2)
+            if (player1LeftScore >= 3 || player2RightScore >= 3)
             {
                 frameCounter++;             // Count the number of frames
                 if (frameCounter == 60)     // Wait one second (60 frames) before making ball 2 active
@@ -336,17 +345,18 @@ int main()
                 }
             }
 
-            if (player1LeftScore == 5)
+            if (player1LeftScore == 10)
             {
-                DrawText("LEFT PLAYER WINS!", (screenWidth / 2) - (MeasureText("LEFT PLAYER WINS!", 50) / 2), (screenHeight / 2) - 25, 50, GOLD);
+                DrawText("LEFT PLAYER WINS!", (screenWidth / 2) - (MeasureText("LEFT PLAYER WINS!", 50) / 2), (screenHeight / 2) - 50, 50, GOLD);
+                DrawText("Press ENTER to play again", (screenWidth / 2) - (MeasureText("Press ENTER to play again", 25) / 2), (screenHeight / 2) + 25, 25, MAGENTA);
                 gameWon = true;
                 ball1.visible = false;
                 ball2.visible = false;
             }
-
-            if (player2RightScore == 5)
+            if (player2RightScore == 10)
             {
-                DrawText("RIGHT PLAYER WINS!", (screenWidth / 2) - (MeasureText("RIGHT PLAYER WINS!", 50) / 2), (screenHeight / 2) - 25, 50, GOLD);
+                DrawText("RIGHT PLAYER WINS!", (screenWidth / 2) - (MeasureText("RIGHT PLAYER WINS!", 50) / 2), (screenHeight / 2) - 50, 50, GOLD);
+                DrawText("Press ENTER to play again", (screenWidth / 2) - (MeasureText("Press ENTER to play again", 25) / 2), (screenHeight / 2) + 25, 25, MAGENTA);
                 gameWon = true;
                 ball1.visible = false;
                 ball2.visible = false;
@@ -361,28 +371,39 @@ int main()
             {
                 player1LeftScore++;     // Player 1 scores
                 ball1.Reset();          // Reset position of ball 1
+                PlaySound(spawnBallFX);      // Play WAV sound
             }
             // If ball 2 passes player 2 (right)
             if (ball2.position.x > screenWidth)
             {
                 player1LeftScore++;     // Player 1 scores
                 ball2.Reset();          // Reset position of ball 2
+                PlaySound(spawnBallFX);      // Play WAV sound
             }
             // If ball 1 passes player 1 (left)
             if (ball1.position.x < 0)
             {
                 player2RightScore++;    // Player 2 scores
                 ball1.Reset();          // Reset position of ball 1
+                PlaySound(spawnBallFX);      // Play WAV sound
             }
             // If ball 2 passes player 1 (left)
             if (ball2.position.x < 0)
             {
                 player2RightScore++;    // Player 2 scores
                 ball2.Reset();          // Reset position of ball 2
+                PlaySound(spawnBallFX);      // Play WAV sound
             }
 
         EndDrawing();
     }
 
-    CloseWindow();
+    // Deinitialise game
+    //------------------------------------------------------------------------------------------------
+    UnloadSound(hitBallFX);         // Unload hitBallFX sound data
+    UnloadSound(spawnBallFX);       // Unload spawnBallFX sound data
+    UnloadMusicStream(music);       // Unload music stream from RAM
+
+    CloseAudioDevice();     // Close the audio device and context
+    CloseWindow();          // Close window and unload OpenGL context
 }

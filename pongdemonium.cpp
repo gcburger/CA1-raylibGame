@@ -20,7 +20,7 @@ const int screenHeight = 800;
 //----------------------------------------------------------------------------------------------------
 struct Ball {
     Vector2 position;
-	Vector2 speed;
+	Vector2 velocity;
 	float radius;
     bool active;
 
@@ -42,7 +42,7 @@ struct Player {
 
 	Rectangle GetRectangle()
 	{
-		return Rectangle{ position.x - (size.x / 2), position.y - (size.y / 2), 15, 100 };
+		return Rectangle{ position.x - (size.x / 2), position.y - (size.y / 2), size.x, size.y };
 	}
 };
 
@@ -62,24 +62,24 @@ int main()
 	player1Left.position.x = 25;
 	player1Left.position.y = GetScreenHeight() / 2;
 	player1Left.size.x = 15;
-	player1Left.size.y = 100;
-	player1Left.speed = 400;
+	player1Left.size.y = 150;
+	player1Left.speed = 1000;
 
 	// Initialise variables of player 2
 	Player player2Right;
 	player2Right.position.x = GetScreenWidth() - 25;
 	player2Right.position.y = GetScreenHeight() / 2;
 	player2Right.size.x = 15;
-	player2Right.size.y = 100;
-	player2Right.speed = 400;
+	player2Right.size.y = 150;
+	player2Right.speed = 1000;
 	
 	// Initialise variables of ball 1
 	Ball ball1;
 	ball1.position.x = GetScreenWidth() / 2;
 	ball1.position.y = GetScreenHeight() / 2;
 	ball1.radius = 10;
-	ball1.speed.x = 250;
-	ball1.speed.y = 250;
+	ball1.velocity.x = 400;
+	ball1.velocity.y = 400;
 	ball1.active = true;
 
 	// Initialise variables of ball 2
@@ -98,27 +98,6 @@ int main()
 		
 		// Logic for position of game objects (sprites)
 		//------------------------------------------------------------------------------------------------
-		// Move ball 1 around the screen - change position by adding velocity in x and y directions
-		ball1.position.x += ball1.speed.x * GetFrameTime();		// Get time in seconds for last frame drawn (delta time)
-		ball1.position.y += ball1.speed.y * GetFrameTime();		// to keep update of position in sync with frame speed
-
-		// Set bottom bound for ball 1
-		if (ball1.position.y > GetScreenHeight() - ball1.radius)
-		{
-			ball1.position.y = GetScreenHeight() - ball1.radius;
-			// Change the direction of the ball
-			ball1.speed.y *= -1;
-		}
-		// Set top bound for ball 1
-		else if (ball1.position.y < 0 + ball1.radius)
-		{
-			ball1.position.y = 0 + ball1.radius;
-			// Change the direction of the ball
-			ball1.speed.y *= -1;
-		}
-
-		// insert bounds for ball2 here
-
 		// Set bottom bound for player 1
 		if (player1Left.position.y > GetScreenHeight() - (player1Left.size.y / 2))
 		{
@@ -141,6 +120,27 @@ int main()
 			player2Right.position.y = 0 + (player2Right.size.y / 2);
 		}
 
+		// Move ball 1 around the screen - change position by adding velocity in x and y directions
+		ball1.position.x += ball1.velocity.x * GetFrameTime();		// Get time in seconds for last frame drawn (delta time) i.e. amount of time between frames
+		ball1.position.y += ball1.velocity.y * GetFrameTime();		// to keep change of position (velocity) in sync with frame speed
+
+		// Set bottom bound for ball 1
+		if (ball1.position.y > GetScreenHeight() - ball1.radius)
+		{
+			ball1.position.y = GetScreenHeight() - ball1.radius;
+			// Change the direction of the ball
+			ball1.velocity.y *= -1;
+		}
+		// Set top bound for ball 1
+		else if (ball1.position.y < 0 + ball1.radius)
+		{
+			ball1.position.y = 0 + ball1.radius;
+			// Change the direction of the ball
+			ball1.velocity.y *= -1;
+		}
+
+		// insert bounds for ball2 here
+
 		// Logic for user input controls
 		//------------------------------------------------------------------------------------------------
 		// Set controls for player 1
@@ -162,10 +162,64 @@ int main()
 		{
 			player2Right.position.y -= player2Right.speed * GetFrameTime();
 		}
-		
+
+		// Logic for collisions of sprites
+		//------------------------------------------------------------------------------------------------
+		// Check for collision between player 1 and ball 1
+		if (CheckCollisionCircleRec(ball1.position, ball1.radius, player1Left.GetRectangle()))		// Check collision between circle and rectangle
+		{
+			// If ball 1 is travelling to the left i.e. negative velocity in x
+			if (ball1.velocity.x < 0)
+			{
+				// Make ball 1 travel right - change its direction
+				ball1.velocity.x *= -1;
+				// If less than max velocity limits for the ball
+				if (ball1.velocity.x <= 800 || ball1.velocity.y <= 800)
+				{
+					// Increase the horizontal velocity of ball 1 by 10%
+					ball1.velocity.x *= 1.1;
+					// Negative velocity moves up
+					// Gives an output between -1 and 1 for angle of the ball
+					ball1.velocity.y = ball1.velocity.x * GetRandomValue(-1, 1);
+					//((ball1.position.y - player1Left.position.y) / (player1Left.size.y / 2));
+				}
+			}
+		}
+		// Check for collision between player 2 and ball 1
+		if (CheckCollisionCircleRec(ball1.position, ball1.radius, player2Right.GetRectangle()))		// Check collision between circle and rectangle
+		{
+			// if ball 1 is travelling to the right i.e. positive velocity in x
+			if (ball1.velocity.x > 0)
+			{
+				// Make ball 1 travel left - change its direction
+				ball1.velocity.x *= -1;
+				// If less than max velocity limits for the ball
+				if (ball1.velocity.x <= 800 || ball1.velocity.y <= 800)
+				{
+					// Increase the horizontal velocity of ball 1 by 10%
+					ball1.velocity.x *= 1.1;
+					ball1.velocity.y =  (-ball1.velocity.x) * GetRandomValue(-1, 1);
+					//((ball1.position.y - player2Right.position.y) / (player2Right.size.y / 2));
+				}
+			}
+		}
+
+		// Logic for scoring and round reset
+		//------------------------------------------------------------------------------------------------
+		if (IsKeyPressed(KEY_ENTER))
+		{
+			ball1.position.x = GetScreenWidth() / 2;
+			ball1.position.y = GetScreenHeight() / 2;
+			ball1.velocity.x = 400;
+			ball1.velocity.y = 400;
+		}
+
 		// Draw game (one frame at a time)
 		BeginDrawing();
 			ClearBackground(BLACK);
+
+			// Draw centre court line
+			DrawLine(GetScreenWidth() / 2, 0, GetScreenWidth() / 2, GetScreenHeight(), GREEN);		// Draw a line
 
 			player1Left.Draw(BLUE);
 			player2Right.Draw(RED);

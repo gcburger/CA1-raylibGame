@@ -26,7 +26,7 @@ struct Ball {
 
     void Draw(Color colour)
     {
-        DrawCircle(position.x, position.y, radius, colour);		// Draw a color-filled circle
+        DrawCircle(position.x, position.y, radius, colour);     // Draw a color-filled circle
     }
 
     void Reset()
@@ -45,7 +45,7 @@ struct Player {
 
     void Draw(Color colour)
     {
-        DrawRectangleRec(GetRectangle(), colour);		// Draw a color-filled rectangle
+        DrawRectangleRec(GetRectangle(), colour);       // Draw a color-filled rectangle
     }
 
     Rectangle GetRectangle()
@@ -59,7 +59,7 @@ struct Player {
 //----------------------------------------------------------------------------------------------------
 Player player1Left, player2Right;
 Ball ball1, ball2;
-int player1LeftScore, player2RightScore;
+int player1LeftScore, player2RightScore, frameCounter;
 bool gamePaused = false;
 bool gameWon = false;
 
@@ -98,9 +98,10 @@ void InitialiseGameObjects()
     ball2.velocity.y = 400;
     ball2.visible = false;
 
-    // Initialise player scoring counts
+    // Initialise counters
     player1LeftScore = 0;
     player2RightScore = 0;
+    frameCounter = 0;
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -112,12 +113,12 @@ int main()
     //------------------------------------------------------------------------------------------------
     InitWindow(screenWidth, screenHeight, "Pongdemonium");
 
-    SetTargetFPS(60);		// Set our game to run at 60 frames-per-second
+    SetTargetFPS(60);       // Set our game to run at 60 frames-per-second
 
     InitialiseGameObjects();
 
     // Main game loop
-    while (!WindowShouldClose())		// Detect window close button or ESC key
+    while (!WindowShouldClose())        // Detect window close button or ESC key
     {
         if (!gameWon)
         {
@@ -148,8 +149,8 @@ int main()
             }
 
             // Move ball 1 around the screen - change position by adding velocity in x and y directions
-            ball1.position.x += ball1.velocity.x * GetFrameTime();		// Get time in seconds for last frame drawn (delta time) i.e. amount of time between frames
-            ball1.position.y += ball1.velocity.y * GetFrameTime();		// to keep change of position (velocity) in sync with frame speed
+            ball1.position.x += ball1.velocity.x * GetFrameTime();      // Get time in seconds for last frame drawn (delta time) i.e. amount of time between frames
+            ball1.position.y += ball1.velocity.y * GetFrameTime();      // to keep change of position (velocity) in sync with frame speed
 
             // Set bottom bound for ball 1
             if (ball1.position.y > screenHeight - ball1.radius)
@@ -169,8 +170,8 @@ int main()
             if (ball2.visible)
             {
                 // Move ball 2 around the screen - change position by adding velocity in x and y directions
-                ball2.position.x += ball2.velocity.x * GetFrameTime();		// Get time in seconds for last frame drawn (delta time) i.e. amount of time between frames
-                ball2.position.y += ball2.velocity.y * GetFrameTime();		// to keep change of position (velocity) in sync with frame speed
+                ball2.position.x += ball2.velocity.x * GetFrameTime();      // Get time in seconds for last frame drawn (delta time) i.e. amount of time between frames
+                ball2.position.y += ball2.velocity.y * GetFrameTime();      // to keep change of position (velocity) in sync with frame speed
 
                 // Set bottom bound for ball 1
                 if (ball2.position.y > screenHeight - ball2.radius)
@@ -213,7 +214,7 @@ int main()
             // Logic for collisions of sprites
             //------------------------------------------------------------------------------------------------
             // Check for collision between player 1 and ball 1
-            if (CheckCollisionCircleRec(ball1.position, ball1.radius, player1Left.GetRectangle()))		// Check collision between circle and rectangle
+            if (CheckCollisionCircleRec(ball1.position, ball1.radius, player1Left.GetRectangle()))      // Check collision between circle and rectangle
             {
                 // If ball 1 is travelling to the left i.e. negative velocity in x
                 if (ball1.velocity.x < 0)
@@ -232,8 +233,30 @@ int main()
                     }
                 }
             }
+
+            // Check for collision between player 1 and ball 2
+            if (CheckCollisionCircleRec(ball2.position, ball2.radius, player1Left.GetRectangle()))      // Check collision between circle and rectangle
+            {
+                // If ball 2 is travelling to the left i.e. negative velocity in x
+                if (ball2.velocity.x < 0)
+                {
+                    // Make ball 2 travel right - change its direction
+                    ball2.velocity.x *= -1;
+                    // If less than max velocity limits for the ball
+                    if (ball2.velocity.x <= 800 || ball2.velocity.y <= 800)
+                    {
+                        // Increase the horizontal velocity of ball 2 by 10%
+                        ball2.velocity.x *= 1.1;
+                        // Negative velocity moves up
+                        // Gives an output between -1 and 1 for angle of the ball
+                        ball2.velocity.y = ball2.velocity.x * GetRandomValue(-1, 1);
+                        //((ball1.position.y - player1Left.position.y) / (player1Left.size.y / 2));
+                    }
+                }
+            }
+
             // Check for collision between player 2 and ball 1
-            if (CheckCollisionCircleRec(ball1.position, ball1.radius, player2Right.GetRectangle()))		// Check collision between circle and rectangle
+            if (CheckCollisionCircleRec(ball1.position, ball1.radius, player2Right.GetRectangle()))     // Check collision between circle and rectangle
             {
                 // if ball 1 is travelling to the right i.e. positive velocity in x
                 if (ball1.velocity.x > 0)
@@ -250,10 +273,29 @@ int main()
                     }
                 }
             }
+
+            // Check for collision between player 2 and ball 2
+            if (CheckCollisionCircleRec(ball2.position, ball2.radius, player2Right.GetRectangle()))     // Check collision between circle and rectangle
+            {
+                // if ball 2 is travelling to the right i.e. positive velocity in x
+                if (ball2.velocity.x > 0)
+                {
+                    // Make ball 2 travel left - change its direction
+                    ball2.velocity.x *= -1;
+                    // If less than max velocity limits for the ball
+                    if (ball2.velocity.x <= 800 || ball2.velocity.y <= 800)
+                    {
+                        // Increase the horizontal velocity of ball 2 by 10%
+                        ball2.velocity.x *= 1.1;
+                        ball2.velocity.y =  (-ball2.velocity.x) * GetRandomValue(-1, 1);
+                        //((ball1.position.y - player2Right.position.y) / (player2Right.size.y / 2));
+                    }
+                }
+            }
         }
         else
         {
-            // Logic for scoring and round reset
+            // Logic for new game/round reset
             //------------------------------------------------------------------------------------------------
             if (IsKeyPressed(KEY_ENTER))
             {
@@ -268,7 +310,7 @@ int main()
             ClearBackground(BLACK);
 
             // Draw centre court line
-            DrawLine(screenWidth / 2, 0, screenWidth / 2, screenHeight, GREEN);		// Draw a line
+            DrawLine(screenWidth / 2, 0, screenWidth / 2, screenHeight, GREEN);     // Draw a line
 
             player1Left.Draw(BLUE);
             player2Right.Draw(RED);
@@ -282,13 +324,16 @@ int main()
                 ball2.Draw(GOLD);
             }
 
-            DrawText(TextFormat("%i", player1LeftScore), (screenWidth / 2) - 40, 10, 40, BLUE);		// Draw text (using default font)
-            DrawText(TextFormat("%i", player2RightScore), (screenWidth / 2) + 20, 10, 40, RED);		// Draw text (using default font)
+            DrawText(TextFormat("%i", player1LeftScore), (screenWidth / 2) - 40, 10, 40, BLUE);     // Draw text (using default font)
+            DrawText(TextFormat("%i", player2RightScore), (screenWidth / 2) + 20, 10, 40, RED);     // Draw text (using default font)
 
-            if (player1LeftScore == 2 || player2RightScore == 2)
+            if (player1LeftScore >= 2 || player2RightScore >= 2)
             {
-                // add a delay for ball 2 displaying
-                ball2.visible = true;
+                frameCounter++;             // Count the number of frames
+                if (frameCounter == 60)     // Wait one second (60 frames) before making ball 2 active
+                {
+                    ball2.visible = true;
+                }
             }
 
             if (player1LeftScore == 5)
@@ -309,19 +354,31 @@ int main()
 
             DrawFPS(5, 5);
 
-            // Logic for scoring
+            // Logic for scoring and auto ball reset
             //------------------------------------------------------------------------------------------------
-            if (ball1.position.x > screenWidth || ball2.position.x > screenWidth)
+            // If ball 1 passes player 2 (right)
+            if (ball1.position.x > screenWidth)
             {
-                player1LeftScore++;
-                ball1.Reset();
-                ball2.Reset();
+                player1LeftScore++;     // Player 1 scores
+                ball1.Reset();          // Reset position of ball 1
             }
-            if (ball1.position.x < 0 || ball2.position.x < 0)
+            // If ball 2 passes player 2 (right)
+            if (ball2.position.x > screenWidth)
             {
-                player2RightScore++;
-                ball1.Reset();
-                ball2.Reset();
+                player1LeftScore++;     // Player 1 scores
+                ball2.Reset();          // Reset position of ball 2
+            }
+            // If ball 1 passes player 1 (left)
+            if (ball1.position.x < 0)
+            {
+                player2RightScore++;    // Player 2 scores
+                ball1.Reset();          // Reset position of ball 1
+            }
+            // If ball 2 passes player 1 (left)
+            if (ball2.position.x < 0)
+            {
+                player2RightScore++;    // Player 2 scores
+                ball2.Reset();          // Reset position of ball 2
             }
 
         EndDrawing();

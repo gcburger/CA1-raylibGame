@@ -5,6 +5,8 @@
 *   Game created using raylib v4.2 - A simple and easy-to-use library to enjoy videogames programming
 *   See www.raylib.com and include/raylib.h for more details
 *
+*   Created by Gareth Burger (D00262405)
+*
 ******************************************************************************************************/
 
 #include "include/raylib.h"
@@ -54,12 +56,15 @@ struct Player {
     }
 };
 
+enum Screen { TITLE, RAYLIB, GAMEPLAY };    // Create an enum of screens to transition between
+
 //----------------------------------------------------------------------------------------------------
 // Variables
 //----------------------------------------------------------------------------------------------------
 Player player1Left, player2Right;
 Ball ball1, ball2;
-int player1LeftScore, player2RightScore, frameCounter;
+Screen currentScreen = TITLE;
+int player1LeftScore, player2RightScore, frameCounter = 0, frameCounterBall2;
 bool gamePaused = false;
 bool gameWon = false;
 
@@ -101,7 +106,7 @@ void InitialiseGameObjects()
     // Initialise counters
     player1LeftScore = 0;
     player2RightScore = 0;
-    frameCounter = 0;
+    frameCounterBall2 = 0;
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -112,7 +117,9 @@ int main()
     // Initialisation
     //------------------------------------------------------------------------------------------------
     InitWindow(screenWidth, screenHeight, "Pongdemonium");
-    InitAudioDevice();          // Initialize audio device and context
+    InitAudioDevice();      // Initialize audio device and context
+
+    SetTargetFPS(60);       // Set the game to run at 60 frames-per-second
 
     Sound hitBallFX = LoadSound("resources/hitBall.wav");           // Load sound from WAV file for ball and player collision
     Sound spawnBallFX = LoadSound("resources/spawnBall.wav");       // Load sound from WAV file for end of game win
@@ -121,18 +128,44 @@ int main()
     SetMusicVolume(music, 0.5);     // Set volume for music (1.0 is max level)
     PlayMusicStream(music);         // Play game music
 
-    SetTargetFPS(60);           // Set the game to run at 60 frames-per-second
-
     InitialiseGameObjects();
 
     // Main game loop
     while (!WindowShouldClose())        // Detect window close button or ESC key
     {
+        // Update game state (one frame at a time)
+        //------------------------------------------------------------------------------------------------
+
+        UpdateMusicStream(music);      // Update music buffer with new stream data
+
+        switch (currentScreen)
+        {
+            case TITLE:
+            {
+                frameCounter++;     // Count the number of frames that have been rendered
+                // Wait 1.5 seconds (90 frames) before changing to RAYLIB screen
+                if (frameCounter > 90)
+                {
+                    currentScreen = RAYLIB;
+                }
+            }   break;
+            case RAYLIB:
+            {
+                frameCounter++;     // Count the number of frames that have been rendered
+                // Wait 1.5 seconds further (90 more frames) before changing to RAYLIB screen
+                if (frameCounter > 180)
+                {
+                    currentScreen = GAMEPLAY;
+                }
+            }   break;
+            case GAMEPLAY:
+                break;
+            default:
+                break;
+        }
+
         if (!gameWon)
         {
-            // Update game state (one frame at a time)
-            UpdateMusicStream(music);      // Update music buffer with new stream data
-            
             // Logic for position of game objects (sprites)
             //------------------------------------------------------------------------------------------------
             // Set bottom bound for player 1
@@ -314,85 +347,98 @@ int main()
         }
 
         // Draw game (one frame at a time)
+        //------------------------------------------------------------------------------------------------
         BeginDrawing();
-            
+
             ClearBackground(BLACK);
 
-            // Draw centre court line
-            DrawLine(screenWidth / 2, 0, screenWidth / 2, screenHeight, GREEN);     // Draw a line
-
-            player1Left.Draw(BLUE);
-            player2Right.Draw(RED);
-
-            if (ball1.visible)
+            switch (currentScreen)
             {
-                ball1.Draw(WHITE);
-            }
-            if (ball2.visible)
-            {
-                ball2.Draw(GOLD);
-            }
-
-            DrawText(TextFormat("%i", player1LeftScore), (screenWidth / 2) - 40, 10, 40, BLUE);     // Draw text (using default font)
-            DrawText(TextFormat("%i", player2RightScore), (screenWidth / 2) + 20, 10, 40, RED);     // Draw text (using default font)
-
-            if (player1LeftScore >= 3 || player2RightScore >= 3)
-            {
-                frameCounter++;             // Count the number of frames
-                if (frameCounter == 60)     // Wait one second (60 frames) before making ball 2 active
+                case TITLE:
+                    DrawText("PONGDEMONIUM", (screenWidth / 2) - (MeasureText("PONGDEMONIUM", 50) / 2), (screenHeight / 2) - 25, 50, GOLD);
+                    break;
+                case RAYLIB:
+                    DrawText("RAYLIB", (screenWidth / 2) - (MeasureText("RAYLIB", 50) / 2), (screenHeight / 2) - 25, 50, WHITE);
+                    break;
+                case GAMEPLAY:
                 {
-                    ball2.visible = true;
-                }
-            }
+                    // Draw centre court line
+                    DrawLine(screenWidth / 2, 0, screenWidth / 2, screenHeight, GREEN);     // Draw a line
 
-            if (player1LeftScore == 10)
-            {
-                DrawText("LEFT PLAYER WINS!", (screenWidth / 2) - (MeasureText("LEFT PLAYER WINS!", 50) / 2), (screenHeight / 2) - 50, 50, GOLD);
-                DrawText("Press ENTER to play again", (screenWidth / 2) - (MeasureText("Press ENTER to play again", 25) / 2), (screenHeight / 2) + 25, 25, MAGENTA);
-                gameWon = true;
-                ball1.visible = false;
-                ball2.visible = false;
-            }
-            if (player2RightScore == 10)
-            {
-                DrawText("RIGHT PLAYER WINS!", (screenWidth / 2) - (MeasureText("RIGHT PLAYER WINS!", 50) / 2), (screenHeight / 2) - 50, 50, GOLD);
-                DrawText("Press ENTER to play again", (screenWidth / 2) - (MeasureText("Press ENTER to play again", 25) / 2), (screenHeight / 2) + 25, 25, MAGENTA);
-                gameWon = true;
-                ball1.visible = false;
-                ball2.visible = false;
-            }
+                    player1Left.Draw(BLUE);
+                    player2Right.Draw(RED);
 
-            DrawFPS(5, 5);
+                    if (ball1.visible)
+                    {
+                        ball1.Draw(WHITE);
+                    }
+                    if (ball2.visible)
+                    {
+                        ball2.Draw(GOLD);
+                    }
 
-            // Logic for scoring and auto ball reset
-            //------------------------------------------------------------------------------------------------
-            // If ball 1 passes player 2 (right)
-            if (ball1.position.x > screenWidth)
-            {
-                player1LeftScore++;     // Player 1 scores
-                ball1.Reset();          // Reset position of ball 1
-                PlaySound(spawnBallFX);      // Play WAV sound
-            }
-            // If ball 2 passes player 2 (right)
-            if (ball2.position.x > screenWidth)
-            {
-                player1LeftScore++;     // Player 1 scores
-                ball2.Reset();          // Reset position of ball 2
-                PlaySound(spawnBallFX);      // Play WAV sound
-            }
-            // If ball 1 passes player 1 (left)
-            if (ball1.position.x < 0)
-            {
-                player2RightScore++;    // Player 2 scores
-                ball1.Reset();          // Reset position of ball 1
-                PlaySound(spawnBallFX);      // Play WAV sound
-            }
-            // If ball 2 passes player 1 (left)
-            if (ball2.position.x < 0)
-            {
-                player2RightScore++;    // Player 2 scores
-                ball2.Reset();          // Reset position of ball 2
-                PlaySound(spawnBallFX);      // Play WAV sound
+                    DrawText(TextFormat("%i", player1LeftScore), (screenWidth / 2) - 40, 10, 40, BLUE);     // Draw text (using default font)
+                    DrawText(TextFormat("%i", player2RightScore), (screenWidth / 2) + 20, 10, 40, RED);     // Draw text (using default font)
+
+                    if (player1LeftScore >= 3 || player2RightScore >= 3)
+                    {
+                        frameCounterBall2++;             // Count the number of frames that have been rendered
+                        if (frameCounterBall2 == 60)     // Wait one second (60 frames) before making ball 2 active
+                        {
+                            ball2.visible = true;
+                        }
+                    }
+
+                    if (player1LeftScore == 10)
+                    {
+                        DrawText("LEFT PLAYER WINS!", (screenWidth / 2) - (MeasureText("LEFT PLAYER WINS!", 50) / 2), (screenHeight / 2) - 50, 50, GOLD);
+                        DrawText("Press ENTER to play again", (screenWidth / 2) - (MeasureText("Press ENTER to play again", 25) / 2), (screenHeight / 2) + 25, 25, MAGENTA);
+                        gameWon = true;
+                        ball1.visible = false;
+                        ball2.visible = false;
+                    }
+                    if (player2RightScore == 10)
+                    {
+                        DrawText("RIGHT PLAYER WINS!", (screenWidth / 2) - (MeasureText("RIGHT PLAYER WINS!", 50) / 2), (screenHeight / 2) - 50, 50, GOLD);
+                        DrawText("Press ENTER to play again", (screenWidth / 2) - (MeasureText("Press ENTER to play again", 25) / 2), (screenHeight / 2) + 25, 25, MAGENTA);
+                        gameWon = true;
+                        ball1.visible = false;
+                        ball2.visible = false;
+                    }
+
+                    // Logic for scoring and auto ball reset
+                    //------------------------------------------------------------------------------------------------
+                    // If ball 1 passes player 2 (right)
+                    if (ball1.position.x > screenWidth)
+                    {
+                        player1LeftScore++;     // Player 1 scores
+                        ball1.Reset();          // Reset position of ball 1
+                        PlaySound(spawnBallFX);      // Play WAV sound
+                    }
+                    // If ball 2 passes player 2 (right)
+                    if (ball2.position.x > screenWidth)
+                    {
+                        player1LeftScore++;     // Player 1 scores
+                        ball2.Reset();          // Reset position of ball 2
+                        PlaySound(spawnBallFX);      // Play WAV sound
+                    }
+                    // If ball 1 passes player 1 (left)
+                    if (ball1.position.x < 0)
+                    {
+                        player2RightScore++;    // Player 2 scores
+                        ball1.Reset();          // Reset position of ball 1
+                        PlaySound(spawnBallFX);      // Play WAV sound
+                    }
+                    // If ball 2 passes player 1 (left)
+                    if (ball2.position.x < 0)
+                    {
+                        player2RightScore++;    // Player 2 scores
+                        ball2.Reset();          // Reset position of ball 2
+                        PlaySound(spawnBallFX);      // Play WAV sound
+                    }
+                }   break;
+                default:
+                    break;
             }
 
         EndDrawing();
@@ -405,5 +451,6 @@ int main()
     UnloadMusicStream(music);       // Unload music stream from RAM
 
     CloseAudioDevice();     // Close the audio device and context
+
     CloseWindow();          // Close window and unload OpenGL context
 }
